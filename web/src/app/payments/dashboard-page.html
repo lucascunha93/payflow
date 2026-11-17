@@ -1,0 +1,127 @@
+<header class="topbar">
+  <h1>Payflow</h1>
+  <button type="button" class="link" (click)="logout()">Sair</button>
+</header>
+
+<main class="layout">
+  <div class="column">
+    <app-payment-form (created)="refresh()" />
+
+    <section class="card" aria-labelledby="notifications-title">
+      <h2 id="notifications-title">Notificações</h2>
+      <ul class="feed" aria-live="polite">
+        @for (notification of notifications(); track notification.id) {
+          <li>
+            <span>{{ notification.message }}</span>
+            <time [attr.datetime]="notification.occurredAt">
+              {{ notification.occurredAt | date: 'dd/MM HH:mm:ss' }}
+            </time>
+          </li>
+        } @empty {
+          <li class="muted">As notificações dos seus pagamentos aparecem aqui.</li>
+        }
+      </ul>
+    </section>
+  </div>
+
+  <section class="card wide" aria-labelledby="payments-title">
+    <div class="card-header">
+      <h2 id="payments-title">Pagamentos</h2>
+      <div class="filters" role="group" aria-label="Filtrar por status">
+        @for (filter of filters; track filter.label) {
+          <button
+            type="button"
+            class="chip"
+            [class.active]="statusFilter() === filter.value"
+            [attr.aria-pressed]="statusFilter() === filter.value"
+            (click)="statusFilter.set(filter.value)"
+          >
+            {{ filter.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (loadFailed()) {
+      <p class="alert" role="alert">
+        Não foi possível carregar os pagamentos.
+        <button type="button" class="link" (click)="refresh()">Tentar novamente</button>
+      </p>
+    }
+    @if (actionError(); as message) {
+      <p class="alert" role="alert">{{ message }}</p>
+    }
+
+    @if (page(); as page) {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Recebedor</th>
+              <th scope="col" class="numeric">Valor</th>
+              <th scope="col">Status</th>
+              <th scope="col">Criado em</th>
+              <th scope="col"><span class="sr-only">Ações</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (payment of page.items; track payment.id) {
+              <tr>
+                <td>
+                  {{ payment.payeeKey }}
+                  @if (payment.description) {
+                    <small>{{ payment.description }}</small>
+                  }
+                  @if (payment.failureReason) {
+                    <small>{{ payment.failureReason }}</small>
+                  }
+                </td>
+                <td class="numeric">{{ payment.amountCents | money: payment.currency }}</td>
+                <td>
+                  <span class="status" [attr.data-status]="payment.status">
+                    {{ statusLabels[payment.status] }}
+                  </span>
+                </td>
+                <td>{{ payment.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td class="actions">
+                  @if (payment.status === 'PENDING') {
+                    <button
+                      type="button"
+                      [disabled]="busyPaymentId() === payment.id"
+                      (click)="settle(payment)"
+                    >
+                      Liquidar
+                    </button>
+                    <button
+                      type="button"
+                      class="danger"
+                      [disabled]="busyPaymentId() === payment.id"
+                      (click)="fail(payment)"
+                    >
+                      Recusar
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="muted empty">
+                  {{
+                    statusFilter()
+                      ? 'Nenhum pagamento com esse status.'
+                      : 'Nenhum pagamento ainda. Crie o primeiro no formulário ao lado.'
+                  }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (page.total > page.items.length) {
+        <p class="muted">Mostrando os {{ page.items.length }} mais recentes de {{ page.total }}.</p>
+      }
+    } @else if (!loadFailed()) {
+      <p class="muted">Carregando…</p>
+    }
+  </section>
+</main>

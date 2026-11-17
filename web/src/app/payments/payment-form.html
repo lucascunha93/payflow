@@ -1,0 +1,71 @@
+<form class="card form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <h2>Novo pagamento</h2>
+
+  <label for="payeeKey">Chave do recebedor</label>
+  <input
+    id="payeeKey"
+    type="text"
+    formControlName="payeeKey"
+    placeholder="E-mail, telefone ou chave aleatória"
+    autocomplete="off"
+    [attr.aria-invalid]="showError('payeeKey')"
+    aria-describedby="payeeKey-error"
+  />
+  @if (showError('payeeKey')) {
+    <p class="field-error" id="payeeKey-error">Informe a chave do recebedor (até 140 caracteres).</p>
+  }
+
+  <div class="row">
+    <div class="grow">
+      <label for="amount">Valor</label>
+      <input
+        id="amount"
+        type="text"
+        inputmode="decimal"
+        formControlName="amount"
+        placeholder="0,00"
+        autocomplete="off"
+        [attr.aria-invalid]="showError('amount')"
+        aria-describedby="amount-error"
+      />
+    </div>
+    <div>
+      <label for="currency">Moeda</label>
+      <select id="currency" formControlName="currency">
+        <option value="BRL">BRL</option>
+        <option value="USD">USD</option>
+      </select>
+    </div>
+  </div>
+  @if (showError('amount')) {
+    <p class="field-error" id="amount-error">
+      @if (form.controls.amount.hasError('amountLimit')) {
+        O limite por pagamento é {{ limitLabel }}.
+      } @else {
+        Informe um valor maior que zero, usando vírgula para os centavos (ex.: 159,90).
+      }
+    </p>
+  }
+
+  <label for="description">Descrição <span class="muted">(opcional)</span></label>
+  <input
+    id="description"
+    type="text"
+    formControlName="description"
+    placeholder="Pedido #1042"
+    autocomplete="off"
+    [attr.aria-invalid]="showError('description')"
+    aria-describedby="description-error"
+  />
+  @if (showError('description')) {
+    <p class="field-error" id="description-error">A descrição pode ter até 140 caracteres.</p>
+  }
+
+  @if (errorMessage(); as message) {
+    <p class="alert" role="alert">{{ message }}</p>
+  }
+
+  <button type="submit" class="primary" [disabled]="submitting()">
+    {{ submitting() ? 'Enviando…' : 'Enviar pagamento' }}
+  </button>
+</form>
